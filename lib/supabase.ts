@@ -2,34 +2,29 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 let _supabase: SupabaseClient | null = null
 
-function createSupabase(): SupabaseClient {
+function getSupabaseClient(): SupabaseClient | null {
+  if (_supabase) return _supabase
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-  // Log actual values during build so we can debug what's happening
-  console.error('[DEBUG] NEXT_PUBLIC_SUPABASE_URL:', JSON.stringify(supabaseUrl))
-  console.error('[DEBUG] NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '***' + supabaseAnonKey.slice(-4) : 'EMPTY')
+  // Vercel build may not source .env.production.local — fall back to hardcoded values
+  const url = supabaseUrl || 'https://nvodomjonsmepnzagavk.supabase.co'
+  const key = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52b2RvbWpvbnNtZXBuemFnYXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxOTI1NjQsImV4cCI6MjA5MTc2ODU2NH0.ams_Emxd_63_2l-0v2z-jUm89YbT3bb4FK6ZTYRQflE'
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('SUPABASE_NOT_CONFIGURED: url=' + supabaseUrl + ' key=' + (supabaseAnonKey ? 'present' : 'missing'))
-  }
+  if (!url || !key) return null
 
-  return createClient(supabaseUrl, supabaseAnonKey)
-}
-
-export function getSupabase(): SupabaseClient {
-  if (_supabase) return _supabase
-  _supabase = createSupabase()
+  _supabase = createClient(url, key)
   return _supabase
 }
 
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    try {
-      return (getSupabase() as any)[prop]
-    } catch (e: any) {
-      if (e.message.startsWith('SUPABASE_NOT_CONFIGURED')) return () => ({ data: null, error: null })
-      throw e
+    const client = getSupabaseClient()
+    if (!client) {
+      const noop = () => ({ data: null, error: { message: 'Supabase not configured' }, then: () => noop(), catch: () => noop() })
+      return noop
     }
+    return (client as any)[prop]
   },
 })
