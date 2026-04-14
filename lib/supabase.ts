@@ -6,9 +6,12 @@ function createSupabase(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-  // Skip during build when env vars aren't set yet (placeholder values)
-  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
-    throw new Error('SUPABASE_NOT_CONFIGURED')
+  // Log actual values during build so we can debug what's happening
+  console.error('[DEBUG] NEXT_PUBLIC_SUPABASE_URL:', JSON.stringify(supabaseUrl))
+  console.error('[DEBUG] NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '***' + supabaseAnonKey.slice(-4) : 'EMPTY')
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('SUPABASE_NOT_CONFIGURED: url=' + supabaseUrl + ' key=' + (supabaseAnonKey ? 'present' : 'missing'))
   }
 
   return createClient(supabaseUrl, supabaseAnonKey)
@@ -25,7 +28,7 @@ export const supabase = new Proxy({} as SupabaseClient, {
     try {
       return (getSupabase() as any)[prop]
     } catch (e: any) {
-      if (e.message === 'SUPABASE_NOT_CONFIGURED') return () => ({ data: null, error: null })
+      if (e.message.startsWith('SUPABASE_NOT_CONFIGURED')) return () => ({ data: null, error: null })
       throw e
     }
   },
