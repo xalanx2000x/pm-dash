@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import type { Alert } from '@/lib/types'
+import { dismissAlert } from '@/lib/actions'
+
+export const dynamic = 'force-dynamic'
 
 async function getAlerts() {
   const { data } = await supabase
@@ -56,7 +59,7 @@ export default async function AlertsPage() {
                   </div>
                   <form action={async () => {
                     'use server'
-                    await supabase.from('alerts').update({ dismissed: true }).eq('id', alert.id)
+                    await dismissAlert(alert.id)
                   }}>
                     <button className="text-xs text-slate-400 hover:text-slate-600 border border-slate-200 rounded px-2 py-1 bg-white">
                       Dismiss

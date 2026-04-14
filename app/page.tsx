@@ -1,7 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 async function getStats() {
+  if (!supabase) return { openTasks: 0, expiringLeases: 0, totalDelinquencies: 0, activeAlerts: [], latestBriefing: null }
   const today = new Date().toISOString().split('T')[0]
   const thirtyDays = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 

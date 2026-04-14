@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import type { Task, Priority } from '@/lib/types'
+import { completeTask, createTask } from '@/lib/actions'
+
+export const dynamic = 'force-dynamic'
 
 const priorityOrder: Record<Priority, number> = { critical: 0, high: 1, medium: 2, low: 3 }
 
@@ -10,12 +13,7 @@ async function getTasks() {
     .in('status', ['open', 'in_progress'])
     .order('created_at', { ascending: false })
 
-  return (data ?? []).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
-}
-
-async function updateTaskStatus(id: string, status: string) {
-  'use server'
-  await supabase.from('tasks').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+  return (data ?? []).sort((a, b) => priorityOrder[a.priority as Priority] - priorityOrder[b.priority as Priority])
 }
 
 export default async function TasksPage() {
@@ -39,7 +37,7 @@ export default async function TasksPage() {
         <h1 className="text-3xl font-bold text-slate-900">Tasks</h1>
         <form action={async () => {
           'use server'
-          await supabase.from('tasks').insert({ title: 'New task', priority: 'medium', status: 'open', category: 'pm' })
+          await createTask('New task', 'medium')
         }}>
           <button className="bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors">
             + Add Task
@@ -57,16 +55,16 @@ export default async function TasksPage() {
             <div key={task.id} className="bg-white rounded-xl p-5 border border-slate-200 flex items-start gap-4">
               <form action={async () => {
                 'use server'
-                await supabase.from('tasks').update({ status: 'done', updated_at: new Date().toISOString() }).eq('id', task.id)
+                await completeTask(task.id)
               }}>
                 <button className="mt-1 w-5 h-5 rounded border-2 border-slate-300 hover:border-sky-500 transition-colors flex-shrink-0" />
               </form>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full border ${priorityColors[task.priority]}`}>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full border ${priorityColors[task.priority as Priority]}`}>
                     {task.priority}
                   </span>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[task.status]}`}>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[task.status] ?? ''}`}>
                     {task.status.replace('_', ' ')}
                   </span>
                   <span className="text-xs text-slate-400">{task.category}</span>

@@ -1,7 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import type { CalendarEvent } from '@/lib/types'
 
+export const dynamic = 'force-dynamic'
+
 async function getEvents() {
+  if (!supabase) return []
   const { data } = await supabase
     .from('calendar_events')
     .select('*')

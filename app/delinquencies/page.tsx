@@ -1,7 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import type { Delinquency, DelinquencyStage } from '@/lib/types'
 
+export const dynamic = 'force-dynamic'
+
 async function getDelinquencies() {
+  if (!supabase) return []
   const { data } = await supabase
     .from('delinquencies')
     .select('*')

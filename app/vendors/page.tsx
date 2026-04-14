@@ -1,7 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import type { Vendor } from '@/lib/types'
 
+export const dynamic = 'force-dynamic'
+
 async function getVendors() {
+  if (!supabase) return []
   const { data } = await supabase
     .from('vendors')
     .select('*')
